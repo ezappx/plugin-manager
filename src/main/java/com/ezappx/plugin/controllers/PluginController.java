@@ -32,7 +32,7 @@ public class PluginController {
      * @return
      */
     @PostMapping(value = "/upload", consumes = {"multipart/form-data"})
-    public Plugin uploadPlugin(@RequestPart("file") MultipartFile file,
+    public PluginInfo uploadPlugin(@RequestPart("file") MultipartFile file,
                                @RequestPart("info") PluginInfo info) {
         Plugin plugin = null;
         try {
@@ -40,7 +40,7 @@ public class PluginController {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return plugin;
+        return plugin.getInfo();
     }
 
     /**

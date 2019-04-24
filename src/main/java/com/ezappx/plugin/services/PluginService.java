@@ -6,6 +6,8 @@ import com.ezappx.plugin.models.PluginInfo;
 import com.ezappx.plugin.repositories.PluginRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 import org.springframework.util.StringUtils;
@@ -22,16 +24,20 @@ import java.util.stream.Collectors;
 public class PluginService {
 
     @Autowired
-    PluginRepository pluginRepository;
+    private PluginRepository pluginRepository;
 
+
+    @CachePut(cacheNames = "pluginCache", key = "#info.name + '@' +#info.version")
     public Plugin storePlugin(MultipartFile data, PluginInfo info) throws IOException {
 
         // if file already in db
         String fileMd5 = DigestUtils.md5DigestAsHex(data.getBytes());
         Optional<Plugin> oldPlugin = pluginRepository.findByMd5(fileMd5);
-        if (oldPlugin.isPresent())
-            return oldPlugin.get();
-        else {
+        if (oldPlugin.isPresent()) {
+            // update plugin info based on info
+            oldPlugin.get().setInfo(info);
+            return pluginRepository.save(oldPlugin.get());
+        } else {
             // save new file to db
             PluginFile file = new PluginFile();
             file.setBytes(data.getBytes());
@@ -47,11 +53,12 @@ public class PluginService {
         }
     }
 
+    @Cacheable(cacheNames = "pluginCache", key = "#nameWithVersion", unless = "#result==null")
     public Plugin loadPlugin(String nameWithVersion, String fileName) throws FileNotFoundException {
         String[] nameAndVer = nameWithVersion.split("@");
 
         if (nameAndVer.length != 2)
-            throw new FileNotFoundException("File not found with fileName " + nameWithVersion);
+            throw new FileNotFoundException("File not found: " + nameWithVersion);
 
         Plugin plugin = pluginRepository.findByInfoNameAndInfoVersion(nameAndVer[0], nameAndVer[1])
                 .orElseThrow(() -> new FileNotFoundException("File not found with fileName " + fileName));
@@ -67,6 +74,6 @@ public class PluginService {
 
     public List<PluginInfo> loadAllPluginInfo() {
         List<Plugin> allPlugin = pluginRepository.findAll();
-        return allPlugin.stream().map(Plugin::getInfo ).collect(Collectors.toList());
+        return allPlugin.stream().map(Plugin::getInfo).collect(Collectors.toList());
     }
 }

@@ -1,6 +1,5 @@
 package com.ezappx.plugin.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.ToString;
 
@@ -21,7 +20,6 @@ public class Plugin {
     private String mediaType;
 
     @ToString.Exclude
-    @JsonIgnore
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private PluginFile data;
 
