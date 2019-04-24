@@ -1,4 +1,4 @@
-package com.ezappx.pluginmanager.models;
+package com.ezappx.plugin.models;
 
 import lombok.Data;
 
@@ -13,9 +13,8 @@ public class PluginFile {
     @GeneratedValue
     private Long id;
 
-    private String fileName;
+    @OneToOne(mappedBy = "data")
+    private Plugin plugin;
 
-    private byte[] content;
-
-    private String md5;
+    private byte[] bytes;
 }
